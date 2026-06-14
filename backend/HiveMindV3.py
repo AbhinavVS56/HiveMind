@@ -1,9 +1,14 @@
 from typing import TypedDict
 from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, START,END
+from langchain.tools import tool
+from ddgs import DDGS
+from langgraph.prebuilt import ToolNode, tools_condition
+from langchain.messages import SystemMessage, HumanMessage
 #import time
 
 class ResearchState(TypedDict):
+    messages:list
     query:str
     research:str
     analysis:str
@@ -16,22 +21,60 @@ llm=ChatOllama(
     temperature=0
 )
 
-def research_agent(state: ResearchState):
-    #start=time.time()
-    prompt=f"""
-    You are an expert researcher.
-    Research the following topic.
-    Provide:
-    - Maximum 3 bullet points
-    - Maximum 80 words total
-    - Only factual information
-    Topic:
-    {state["query"]}
+@tool
+def web_search(query:str)->str:
     """
-    response=llm.invoke(prompt)
-    #print(f"Researcher took {time.time()-start:.2f} seconds")
-    return{
-        "research":response.content
+    Search the web for the current information
+    """
+    with DDGS() as ddgs:
+        results=list(ddgs.text(
+            query,
+            max_result=3
+        ))
+    return str(results)
+
+llm_tools=llm.bind_tools(
+    [
+        web_search
+    ]
+)
+
+tool_node=ToolNode(
+    [
+        web_search
+    ]
+)
+
+def research_agent(state: ResearchState):
+    if not state["messages"]:
+        messages = [
+            SystemMessage(
+                content="""
+                You are an expert researcher.
+                Research the user's topic.
+                Use tools whenever current information
+                is required.
+                Provide:
+                - Maximum 3 bullet points
+                - Maximum 80 words total
+                - Only factual information
+                """
+            ),
+            HumanMessage(
+                content=state["query"]
+            )
+        ]
+    else:
+        messages = state["messages"]
+    response = llm_tools.invoke(messages)
+    print("TOOL CALL", response.tool_calls)
+    if response.tool_calls:
+        return {
+            "messages": [response]
+        }
+    return {
+        "messages": [response],
+        "research": response.content
     }
 
 def analysis_agent(state: ResearchState):
@@ -129,13 +172,19 @@ def writer_agent(state: ResearchState):
 graph_builder=StateGraph(ResearchState)
 
 graph_builder.add_node("researcher",research_agent)
+graph_builder.add_node("tools",tool_node)
 graph_builder.add_node("analyst",analysis_agent)
 graph_builder.add_node("critic",critic_agent)
 graph_builder.add_node("writer",writer_agent)
 graph_builder.add_node("decision",decision_agent)
 
 graph_builder.add_edge(START,"researcher")
-graph_builder.add_edge("researcher","analyst")
+graph_builder.add_conditional_edges("researcher",tools_condition,{
+                                "tools":"tools",
+                                END:"analyst"
+                            }
+                        )
+graph_builder.add_edge("tools","researcher")
 graph_builder.add_edge("analyst","decision")
 graph_builder.add_conditional_edges("decision",
                                     route_decision,
@@ -151,13 +200,18 @@ graph=graph_builder.compile()
 #print(graph.get_graph().draw_mermaid())
 
 test_state={
-    "query":"Compare LangGraph and CrewAI",
+    "messages":[],
+    "query":"Which country is hosting FIFA 2026 and who won the first match?",
     "research":"",
     "analysis":"",
-    "need_critic":"",
+    "need_critic":False,
     "critique":"",
     "final_answer":""
 }
+
+#print(web_search.invoke(
+#    {"query":"Which mainline resident evil games features Leon in it"}
+#))
 
 result=graph.invoke(test_state)
 print(result["final_answer"])
