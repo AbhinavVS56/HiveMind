@@ -1,14 +1,15 @@
-from typing import TypedDict
+from typing import TypedDict, Annotated
+from langgraph.graph.message import add_messages
 from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, START,END
 from langchain.tools import tool
 from ddgs import DDGS
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain.messages import SystemMessage, HumanMessage
-#import time
+import time
 
 class ResearchState(TypedDict):
-    messages:list
+    messages:Annotated[list,add_messages]
     query:str
     research:str
     analysis:str
@@ -66,7 +67,9 @@ def research_agent(state: ResearchState):
         ]
     else:
         messages = state["messages"]
+    start=time.time()
     response = llm_tools.invoke(messages)
+    print(f"Researcher took {time.time()-start:.2f} seconds")
     print("TOOL CALL", response.tool_calls)
     if response.tool_calls:
         return {
@@ -78,7 +81,7 @@ def research_agent(state: ResearchState):
     }
 
 def analysis_agent(state: ResearchState):
-    #start=time.time()
+    start=time.time()
     prompt=f"""
     You are an expert analyst.
     Analyze the research below and provide exactly 2 key insights.
@@ -87,13 +90,13 @@ def analysis_agent(state: ResearchState):
     {state['research']}
     """
     response=llm.invoke(prompt)
-    #print(f"Analyst took {time.time()-start:.2f} seconds")
+    print(f"Analyst took {time.time()-start:.2f} seconds")
     return{
         "analysis":response.content
     }
 
 def decision_agent(state: ResearchState):
-    #start=time.time()
+    start=time.time()
     prompt=f"""
     You are a workflow manager.
     A critique step is required when:
@@ -116,7 +119,7 @@ def decision_agent(state: ResearchState):
     answer=response.content.upper()
     #print("RAW RESPONSE:")
     #print(response.content)
-    #print(f"Decision Agent took {time.time()-start:.2f} seconds")
+    print(f"Decision Agent took {time.time()-start:.2f} seconds")
     return{
         "need_critic": "YES" in answer
     }
@@ -127,7 +130,7 @@ def route_decision(state: ResearchState):
     return "writer"
 
 def critic_agent(state: ResearchState):
-    #start=time.time()
+    start=time.time()
     prompt=f"""
     You are an expert critic.
     Review the research and analysis below.
@@ -144,13 +147,13 @@ def critic_agent(state: ResearchState):
     {state['analysis']}
     """
     response=llm.invoke(prompt)
-    #print(f"Critic took {time.time()-start:.2f} seconds")
+    print(f"Critic took {time.time()-start:.2f} seconds")
     return{
         "critique":response.content
     }
 
 def writer_agent(state: ResearchState):
-    #start=time.time()
+    start=time.time()
     prompt=f"""
     You are an expert technical writer.
     Using the research, analysis and critique below,
@@ -164,7 +167,7 @@ def writer_agent(state: ResearchState):
     {state['critique']}
     """
     response=llm.invoke(prompt)
-    #print(f"Writer took {time.time()-start:.2f} seconds")
+    print(f"Writer took {time.time()-start:.2f} seconds")
     return{
         "final_answer":response.content
     }
@@ -201,7 +204,7 @@ graph=graph_builder.compile()
 
 test_state={
     "messages":[],
-    "query":"Which country is hosting FIFA 2026 and who won the first match?",
+    "query":"Why is Resident Evil 5 and 6 hated by the fans so much?",
     "research":"",
     "analysis":"",
     "need_critic":False,
