@@ -3,9 +3,10 @@ from langgraph.graph.message import add_messages
 from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, START,END
 from langchain.tools import tool
+from langchain_core.messages import SystemMessage, HumanMessage
 from ddgs import DDGS
 from langgraph.prebuilt import ToolNode, tools_condition
-from langchain.messages import SystemMessage, HumanMessage
+from memory import search_memory
 import time
 
 class ResearchState(TypedDict):
@@ -16,6 +17,8 @@ class ResearchState(TypedDict):
     critique:str
     final_answer:str
     need_critic:bool
+    memory:str
+    memory_distance:float
 
 llm=ChatOllama(
     model="qwen3:8b",
@@ -30,7 +33,7 @@ def web_search(query:str)->str:
     with DDGS() as ddgs:
         results=list(ddgs.text(
             query,
-            max_result=3
+            max_result=1
         ))
     return str(results)
 
@@ -46,6 +49,38 @@ tool_node=ToolNode(
     ]
 )
 
+def memory_agent(state: ResearchState):
+    result=search_memory(state["query"])
+    if result is None:
+        print("No memory found")
+        return {}
+    print("Memory found")
+    return{
+        "memory":result["document"],
+        "memory_distance":result["distance"]
+    }
+
+def RAG_agent(state: ResearchState):
+    messages=[
+        SystemMessage(
+            content="""
+            You are a helpful assistant.
+            Use the retrieved memory to answer the user's question.
+            If the memory is relevant, use it as context for your answer.
+            """
+        ),
+        HumanMessage(
+            content=f"""
+            Relevant Message:{state['memory']}
+            User Question:{state['query']}
+            """
+        )
+    ]
+    response=llm.invoke(messages)
+    return{
+        "final_answer":response.content
+    }
+
 def research_agent(state: ResearchState):
     if not state["messages"]:
         messages = [
@@ -53,8 +88,12 @@ def research_agent(state: ResearchState):
                 content="""
                 You are an expert researcher.
                 Research the user's topic.
-                Use tools whenever current information
-                is required.
+                Use web search whenever:
+                - The answer depends on factual accuracy
+                - The answer refers to a specific person, game, event, company, technology, or topic
+                - You are uncertain
+                - Additional context could improve accuracy
+                When in doubt, search first.
                 Provide:
                 - Maximum 3 bullet points
                 - Maximum 80 words total
@@ -111,7 +150,8 @@ def decision_agent(state: ResearchState):
     -The query asks for definitions
     -The query asks for straightforward explanations
 
-    Return only YES or NO
+    Return only YES or NO and it should be quick.
+    Most favourable will be few seconds cause it's just a yes/no answer.
     Query:
     {state['query']}
     """
@@ -128,6 +168,11 @@ def route_decision(state: ResearchState):
     if state["need_critic"]:
         return "critic"
     return "writer"
+
+def memory_router(state):
+    if state["memory"]:
+        return "RAG"
+    return "researcher"
 
 def critic_agent(state: ResearchState):
     start=time.time()
@@ -174,6 +219,8 @@ def writer_agent(state: ResearchState):
 
 graph_builder=StateGraph(ResearchState)
 
+graph_builder.add_node("memory",memory_agent)
+graph_builder.add_node("RAG",RAG_agent)
 graph_builder.add_node("researcher",research_agent)
 graph_builder.add_node("tools",tool_node)
 graph_builder.add_node("analyst",analysis_agent)
@@ -181,7 +228,13 @@ graph_builder.add_node("critic",critic_agent)
 graph_builder.add_node("writer",writer_agent)
 graph_builder.add_node("decision",decision_agent)
 
-graph_builder.add_edge(START,"researcher")
+graph_builder.add_edge(START,"memory")
+graph_builder.add_conditional_edges("memory",memory_router,{
+                                "RAG":"RAG",
+                                "researcher":"researcher"    
+                            }
+                        )
+graph_builder.add_edge("RAG",END)
 graph_builder.add_conditional_edges("researcher",tools_condition,{
                                 "tools":"tools",
                                 END:"analyst"
@@ -204,12 +257,14 @@ graph=graph_builder.compile()
 
 test_state={
     "messages":[],
-    "query":"Why is Resident Evil 5 and 6 hated by the fans so much?",
+    "query":"What did Kratos do to Baldur?",
     "research":"",
     "analysis":"",
     "need_critic":False,
     "critique":"",
-    "final_answer":""
+    "final_answer":"",
+    "memory":"",
+    "memory_distance":0.0
 }
 
 #print(web_search.invoke(
