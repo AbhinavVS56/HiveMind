@@ -1,13 +1,16 @@
 from typing import TypedDict, Annotated
 from langgraph.graph.message import add_messages
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START,END
 from langchain.tools import tool
 from langchain_core.messages import SystemMessage, HumanMessage
 from ddgs import DDGS
 from langgraph.prebuilt import ToolNode, tools_condition
 from memory import search_memory
+from dotenv import load_dotenv
 import time
+
+load_dotenv()
 
 class ResearchState(TypedDict):
     messages:Annotated[list,add_messages]
@@ -20,8 +23,8 @@ class ResearchState(TypedDict):
     memory:str
     memory_distance:float
 
-llm=ChatOllama(
-    model="qwen3:8b",
+llm=ChatGroq(
+    model="openai/gpt-oss-20b",
     temperature=0
 )
 
@@ -33,9 +36,11 @@ def web_search(query:str)->str:
     with DDGS() as ddgs:
         results=list(ddgs.text(
             query,
-            max_result=1
+            max_results=3
         ))
-    return str(results)
+    return "\n".join(
+    result["body"]
+    for result in results[:3])
 
 llm_tools=llm.bind_tools(
     [
@@ -86,18 +91,17 @@ def research_agent(state: ResearchState):
         messages = [
             SystemMessage(
                 content="""
-                You are an expert researcher.
-                Research the user's topic.
-                Use web search whenever:
-                - The answer depends on factual accuracy
-                - The answer refers to a specific person, game, event, company, technology, or topic
-                - You are uncertain
-                - Additional context could improve accuracy
-                When in doubt, search first.
+                You are an expert Researcher.
+                You may use web search at most ONE time.
+                If a tool result is already available in the conversation:
+                - DO NOT call any additional tools.
+                - Use the existing search results.
+                - Continue with the research.
+
                 Provide:
-                - Maximum 3 bullet points
-                - Maximum 80 words total
-                - Only factual information
+                -Maximum 3 bullet points
+                -Maximum of 100 words total
+                -Only factual information
                 """
             ),
             HumanMessage(
@@ -108,8 +112,8 @@ def research_agent(state: ResearchState):
         messages = state["messages"]
     start=time.time()
     response = llm_tools.invoke(messages)
+    #print(response.tool_calls)
     print(f"Researcher took {time.time()-start:.2f} seconds")
-    print("TOOL CALL", response.tool_calls)
     if response.tool_calls:
         return {
             "messages": [response]
@@ -137,28 +141,26 @@ def analysis_agent(state: ResearchState):
 def decision_agent(state: ResearchState):
     start=time.time()
     prompt=f"""
-    You are a workflow manager.
-    A critique step is required when:
-    -The query asks for comparisions
-    -The query involves opinions
-    -The query involves trade-offs
-    -The query involves recommendations
-    -The query involves controversial topics
+    Return only YES or NO.
 
-    A critique step is NOT needed when:
-    -The query asks for simple facts
-    -The query asks for definitions
-    -The query asks for straightforward explanations
+    YES:
+    comparisons
+    recommendations
+    opinions
+    tradeoffs
+    controversies
+    public sentiment
+    success/failure analysis
+    reputation-related questions
 
-    Return only YES or NO and it should be quick.
-    Most favourable will be few seconds cause it's just a yes/no answer.
-    Query:
+    NO:
+    definitions
+    simple facts
+    straightforward explanations
     {state['query']}
     """
     response=llm.invoke(prompt)
     answer=response.content.upper()
-    #print("RAW RESPONSE:")
-    #print(response.content)
     print(f"Decision Agent took {time.time()-start:.2f} seconds")
     return{
         "need_critic": "YES" in answer
@@ -253,11 +255,10 @@ graph_builder.add_edge("critic","writer")
 graph_builder.add_edge("writer",END)
 
 graph=graph_builder.compile()
-#print(graph.get_graph().draw_mermaid())
 
 test_state={
     "messages":[],
-    "query":"What did Kratos do to Baldur?",
+    "query":"What is javascript?",
     "research":"",
     "analysis":"",
     "need_critic":False,
@@ -266,10 +267,6 @@ test_state={
     "memory":"",
     "memory_distance":0.0
 }
-
-#print(web_search.invoke(
-#    {"query":"Which mainline resident evil games features Leon in it"}
-#))
 
 result=graph.invoke(test_state)
 print(result["final_answer"])
