@@ -6,7 +6,7 @@ from langchain.tools import tool
 from langchain_core.messages import SystemMessage, HumanMessage
 from ddgs import DDGS
 from langgraph.prebuilt import ToolNode, tools_condition
-from memory import search_memory
+from memory import search_memory, save_memory
 from dotenv import load_dotenv
 import time
 
@@ -64,6 +64,14 @@ def memory_agent(state: ResearchState):
         "memory":result["document"],
         "memory_distance":result["distance"]
     }
+
+def memory_saver_agent(state: ResearchState):
+    save_memory(
+        state["query"],
+        state["final_answer"]
+    )
+    print("Memory saved")
+    return{}
 
 def RAG_agent(state: ResearchState):
     messages=[
@@ -141,23 +149,28 @@ def analysis_agent(state: ResearchState):
 def decision_agent(state: ResearchState):
     start=time.time()
     prompt=f"""
-    Return only YES or NO.
+    You are a routing classifier.
+    Return ONLY YES or NO.
+    YES only if:
+    - The query asks for recommendations
+    - The query asks for comparisons
+    - The query asks for opinions
+    - The query asks for tradeoffs
+    - The query involves public sentiment
+    - The query involves success/failure analysis
+    - The query involves controversy
 
-    YES:
-    comparisons
-    recommendations
-    opinions
-    tradeoffs
-    controversies
-    public sentiment
-    success/failure analysis
-    reputation-related questions
+    NO if:
+    - The query asks for facts
+    - The query asks for definitions
+    - The query asks for explanations
+    - The query asks how something works
+    - The query asks about concepts
 
-    NO:
-    definitions
-    simple facts
-    straightforward explanations
+    Query:
     {state['query']}
+    Research:
+    {state['research']}
     """
     response=llm.invoke(prompt)
     answer=response.content.upper()
@@ -222,6 +235,7 @@ def writer_agent(state: ResearchState):
 graph_builder=StateGraph(ResearchState)
 
 graph_builder.add_node("memory",memory_agent)
+graph_builder.add_node("memory_saver",memory_saver_agent)
 graph_builder.add_node("RAG",RAG_agent)
 graph_builder.add_node("researcher",research_agent)
 graph_builder.add_node("tools",tool_node)
@@ -252,13 +266,14 @@ graph_builder.add_conditional_edges("decision",
                                     }
                                 )
 graph_builder.add_edge("critic","writer")
-graph_builder.add_edge("writer",END)
+graph_builder.add_edge("writer","memory_saver")
+graph_builder.add_edge("memory_saver",END)
 
 graph=graph_builder.compile()
 
 test_state={
     "messages":[],
-    "query":"What is javascript?",
+    "query":"What is CSS?",
     "research":"",
     "analysis":"",
     "need_critic":False,
