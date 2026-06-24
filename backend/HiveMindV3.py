@@ -271,17 +271,16 @@ graph_builder.add_edge("memory_saver",END)
 
 graph=graph_builder.compile()
 
-"""test_state={
-    "messages":[],
-    "query":"What is CSS?",
-    "research":"",
-    "analysis":"",
-    "need_critic":False,
-    "critique":"",
-    "final_answer":"",
-    "memory":"",
-    "memory_distance":0.0
-}
-
-result=graph.invoke(test_state)
-print(result["final_answer"])"""
+if __name__=="__main__":
+    test_case={
+        "messages":[],
+        "query":"Who won the game of the year awards in 2018",
+        "research":"",
+        "need_critic":False,
+        "critique":"",
+        "final_answer":"",
+        "memory":"",
+        "memory_distance":0.0
+    }
+    result=graph.invoke(test_case)
+    print(result["final_answer"])
