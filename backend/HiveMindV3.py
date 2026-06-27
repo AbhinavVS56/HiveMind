@@ -3,7 +3,7 @@ from langgraph.graph.message import add_messages
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START,END
 from langchain.tools import tool
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from ddgs import DDGS
 from langgraph.prebuilt import ToolNode, tools_condition
 from memory import search_memory, save_memory
@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 import time
 
 load_dotenv()
+
+THRESHOLD=1.2
 
 class ResearchState(TypedDict):
     messages:Annotated[list,add_messages]
@@ -59,7 +61,7 @@ def memory_agent(state: ResearchState):
     if result is None:
         print("No memory found")
         return {}
-    print("Memory found")
+    print(f"Memory found (distance: {result['distance']:.3f})")
     return{
         "memory":result["document"],
         "memory_distance":result["distance"]
@@ -118,8 +120,14 @@ def research_agent(state: ResearchState):
         ]
     else:
         messages = state["messages"]
+    
+    tool_used=any(isinstance(message,ToolMessage)
+                  for message in messages)
     start=time.time()
-    response = llm_tools.invoke(messages)
+    if tool_used:
+        response=llm.invoke(messages)
+    else:
+        response=llm_tools.invoke(messages)
     #print(response.tool_calls)
     print(f"Researcher took {time.time()-start:.2f} seconds")
     if response.tool_calls:
@@ -185,7 +193,7 @@ def route_decision(state: ResearchState):
     return "writer"
 
 def memory_router(state):
-    if state["memory"]:
+    if(state["memory"] and state["memory_distance"]<THRESHOLD):
         return "RAG"
     return "researcher"
 
@@ -214,17 +222,30 @@ def critic_agent(state: ResearchState):
 
 def writer_agent(state: ResearchState):
     start=time.time()
-    prompt=f"""
+    prompt = f"""
     You are an expert technical writer.
-    Using the research, analysis and critique below,
-    create a clear, balanced and well structured final answer.
-    Maximum 150 words.
+    Your primary task is to answer the USER'S QUESTION directly.
+    Guidelines:
+    - Answer the user's question first.
+    - Use the research, analysis and critique only as supporting context.
+    - Match the response style to the user's request:
+        - If the user asks for a list, return a concise list.
+        - If the user asks for an explanation, explain clearly.
+        - If the user asks for comparisons, present balanced comparisons.
+        - If the user asks for opinions or controversies, include multiple viewpoints.
+    - Do not include unnecessary analysis if the user did not ask for it.
+    - Do not repeat information.
+    - Keep the answer natural and easy to read.
+    - Maximum 150 words.
+
+    User Question: 
+    {state["query"]}
     Research:
-    {state['research']}
+    {state["research"]}
     Analysis:
-    {state['analysis']}
+    {state["analysis"]}
     Critique:
-    {state['critique']}
+    {state["critique"]}
     """
     response=llm.invoke(prompt)
     print(f"Writer took {time.time()-start:.2f} seconds")
@@ -276,6 +297,7 @@ if __name__=="__main__":
         "messages":[],
         "query":"Who won the game of the year awards in 2018",
         "research":"",
+        "analysis":"",
         "need_critic":False,
         "critique":"",
         "final_answer":"",
