@@ -1,4 +1,5 @@
 import { useState } from "react"
+import "./App.css"
 
 function App(){
   const[query,setQuery]=useState("")
@@ -24,19 +25,26 @@ function App(){
   }
 
   return(
-    <div>
-      <h1>HiveMind</h1>
-      <input type="text" placeholder="Ask anything" value={query} onChange={(event)=>setQuery(event.target.value)}/>
-      <button onClick={sendQuestion} disabled={loading}>{loading?"Thinking...":"Ask HiveMind"}</button>
-      <h2>Conversation</h2>
-      {messages.map((message,index)=>(
-        <div key={index}>
-          <h3>{message.sender}</h3>
-          <p>{message.text}</p>
+    <div className="app">
+      <h1 className="title">HiveMind</h1>
+      <textarea className="query-input"
+              placeholder="Ask anything" 
+              value={query} 
+              onChange={(event)=>setQuery(event.target.value)}>
+      </textarea>
+      <button className="ask-button"
+              onClick={sendQuestion} 
+              disabled={loading}>{loading?"Thinking...":"Ask HiveMind"}</button>
+      <h2 className="convo-title">Conversation</h2>
+      <div className="convo">  
+        {messages.map((message,index)=>(
+        <div key={index} className={`message ${message.sender === "You" ? "user" : "hivemind"}`}>
+          <h3 className="sender">{message.sender}</h3>
+          <p className="content">{message.text}</p>
         </div>
-
       ))
       }
+      </div>
     </div>
   )
 }

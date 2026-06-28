@@ -3,7 +3,7 @@ from langgraph.graph.message import add_messages
 from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START,END
 from langchain.tools import tool
-from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
+from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage, AIMessage
 from ddgs import DDGS
 from langgraph.prebuilt import ToolNode, tools_condition
 from memory import search_memory, save_memory
@@ -125,9 +125,32 @@ def research_agent(state: ResearchState):
                   for message in messages)
     start=time.time()
     if tool_used:
-        response=llm.invoke(messages)
+        summary_messages = [
+            SystemMessage(
+                content="""
+                You are an expert researcher.
+                The web search has ALREADY been completed.
+                DO NOT search again.
+                Use ONLY the search results below to answer the user's question.
+                Do NOT invent information that is not present in the search results.
+                Maximum 3 bullet points.
+                Maximum 100 words.
+                Only factual information.
+                """
+            ),
+            HumanMessage(
+                content=f"""
+                Question:
+                {state["query"]}
+                Search Results:
+                {state["messages"][-1].content}
+                Create a concise factual summary.
+                """
+                )
+            ]
+        response = llm.invoke(summary_messages)
     else:
-        response=llm_tools.invoke(messages)
+        response = llm_tools.invoke(messages)
     #print(response.tool_calls)
     print(f"Researcher took {time.time()-start:.2f} seconds")
     if response.tool_calls:
