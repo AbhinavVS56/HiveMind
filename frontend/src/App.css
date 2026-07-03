@@ -2,31 +2,56 @@
   box-sizing: border-box;
 }
 
-.app{
+body{
+  background-image: url("./assets/background.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat:no-repeat;
+  min-height: 100vh;
+}
+
+.landing-page{
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
-  width: 100%;
-  max-width: 700px;
-  margin: auto;
+  gap: 2.5rem;
 }
 
-.title{
-  text-align: center;
+.logo{
+  width: 420px;
+  height: auto;
+}
+
+.input-section{
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.button{
+  display: flex;
+  justify-content: center;
 }
 
 .query-input{
   width: 100%;
   padding: 1rem;
   margin-top: 1rem;
-  border: 1px solid white;
-  border-radius: 8px;
+  border: 2px solid white;
+  border-radius: 24px;
+  background-color: rgb(255, 255, 255, 0.18);
   font-size: 1rem;
   transition: all 0.2s;
   resize: none;
-  min-height: 60px;
+  min-height: 52px;
+}
+
+.query-input::placeholder{
+  color: lightgray;
 }
 
 .query-input:focus{
@@ -36,22 +61,40 @@
 }
 
 .ask-button{
-  margin-top: 1rem;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 8px;
+  padding: 0.9rem 2rem;
+  border: 2px solid white;
+  border-radius: 999px;
   cursor: pointer;
-  background-color: royalblue;
+  background-color: firebrick;
+  font-weight: 600;
   color: white;
-  transition: 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 12px rgba(178,34,34,0,5);
 }
 
 .ask-button:hover{
-  background-color: blue;
-  transform: scale(1.06);
+  background-color: darkred;
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(220,20,60,0.6);
 }
 
-.convo-title{
+.quote{
+  margin-top: 3rem;
+  text-align: center;
+  color: whitesmoke;
+  opacity: 0.8;
+  max-width: 650px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.quote span{
+  display: block;
+  margin-top: 0.2rem;
+  color: lightgray;
+}
+
+/*.convo-title{
   margin-top: 2rem;
 }
 .convo{
@@ -90,4 +133,4 @@
 
 .content{
   text-align: left;
-}
+}*/
