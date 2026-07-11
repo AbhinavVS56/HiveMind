@@ -10,23 +10,106 @@ body{
   min-height: 100vh;
 }
 
-.landing-page{
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 2.5rem;
+.app{
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.header{
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    z-index: 10;
+    transition: top 0.8s ease, left 0.8s ease, transform 0.8s ease;
+}
+
+.app.chat-mode .header{
+    top: 20px;
+    left: 24px;
+    transform: translate(0, 0);
+    align-items:flex-start;
 }
 
 .logo{
   width: 420px;
   height: auto;
+  transition: width 0.8s ease;
+}
+
+.app.chat-mode .logo{
+  width: 160px;
+}
+
+.conversation-area{
+    position: absolute;
+    top: 42%;
+    left: 0;
+    right: 0;
+    bottom: 60%;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: top 0.8s ease, bottom 0.8s ease, opacity 0.5s ease;
+    z-index: 1;
+}
+
+.app.chat-mode .conversation-area{
+    top: 110px;
+    bottom: 180px;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.conversation{
+  width: 100%;
+  display:flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 20px 40px;
+}
+
+.message{
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  max-width: 75%;
+}
+
+.user{
+  background-color: rgba(145,0,0,0.82);
+  color: white;
+  align-self: flex-end;
+}
+
+.hivemind{
+  background-color: rgba(25,25,25,0.82);
+  color: white;
+  align-self: flex-start;
+}
+
+.input-area{
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    width: min(700px, 90vw);
+    z-index: 10;
+    transition: top 0.8s ease, left 0.8s ease, transform 0.8s ease;
+}
+
+.app.chat-mode .input-area{
+    top: auto;
+    bottom: 30px;
 }
 
 .input-section{
   width: 100%;
-  max-width: 700px;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -56,12 +139,12 @@ body{
 
 .query-input:focus{
   outline: none;
-  border: 1px solid royalblue;
-  box-shadow: 0 0 10px royalblue;
+  border: 1px solid crimson;
+  box-shadow: 0 0 10px crimson;
 }
 
 .ask-button{
-  padding: 0.9rem 2rem;
+  padding: 0.9rem 1.4rem;
   border: 2px solid white;
   border-radius: 999px;
   cursor: pointer;
@@ -69,7 +152,7 @@ body{
   font-weight: 600;
   color: white;
   transition: all 0.3s ease;
-  box-shadow: 0 0 12px rgba(178,34,34,0,5);
+  box-shadow: 0 0 12px rgba(178,34,34,0.5);
 }
 
 .ask-button:hover{
@@ -79,58 +162,31 @@ body{
 }
 
 .quote{
-  margin-top: 3rem;
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translate(-50%, 0);
   text-align: center;
   color: whitesmoke;
-  opacity: 0.8;
-  max-width: 650px;
+  opacity: 0.6;
+  max-width: 900px;
+  width: 90vw;
   font-size: 0.8rem;
-  line-height: 1.6;
+  line-height: 1.4;
+  z-index: 5;
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 .quote span{
   display: block;
-  margin-top: 0.2rem;
+  margin-top: 0.3rem;
   color: lightgray;
+  font-size: 0.8rem;
+  text-align: right;
 }
 
-/*.convo-title{
-  margin-top: 2rem;
+.app.chat-mode .quote{
+  opacity: 0;
+  transform: translate(-50%, 20px);
+  pointer-events: none;
 }
-.convo{
-  margin-top: 1rem;
-  width: 100%;
-  display:flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.message{
-  display: flex;
-  flex-direction: column;
-  padding: 1rem 1.25rem;
-  border-radius: 16px;
-  max-width: 75%;
-  box-shadow: 0 4px 10px gray;
-}
-
-.user{
-  background-color: royalblue;
-  color: white;
-  align-self: flex-end;
-}
-
-.hivemind{
-  background-color: dimgray;
-  color: white;
-  align-self: flex-start;
-}
-
-.sender{
-  margin-bottom: 0.8rem;
-  text-align: left;
-}
-
-.content{
-  text-align: left;
-}*/
