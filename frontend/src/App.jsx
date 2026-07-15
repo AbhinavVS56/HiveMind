@@ -1,6 +1,7 @@
 import { useState } from "react"
 import "./App.css"
 import logo from "./assets/logo.png"
+import mindflayer from "./assets/mindflayer1.jpg"
 
 function App(){
   const[query,setQuery]=useState("")
@@ -78,6 +79,7 @@ function App(){
             <br/>
             <span>— Dustin Henderson</span>
         </p>
+        <img src={mindflayer} alt="Mind Flayer" className="mindflayer"/>
     </div>
 )
 }
