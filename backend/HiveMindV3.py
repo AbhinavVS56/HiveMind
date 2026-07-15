@@ -101,17 +101,26 @@ def research_agent(state: ResearchState):
         messages = [
             SystemMessage(
                 content="""
-                You are an expert Researcher.
-                You may use web search at most ONE time.
-                If a tool result is already available in the conversation:
-                - DO NOT call any additional tools.
-                - Use the existing search results.
-                - Continue with the research.
+                You are an expert researcher.
 
-                Provide:
-                -Maximum 3 bullet points
-                -Maximum of 100 words total
-                -Only factual information
+                For questions involving:
+                - latest
+                - current
+                - recent
+                - today
+                - yesterday
+                - this week
+                - this month
+                - release
+                - price
+                - stock
+                - news
+                - weather
+                ALWAYS use the web search tool first.
+                Use the tool at most once.
+                After obtaining search results,
+                summarize them.
+                Never answer these questions from memory.
                 """
             ),
             HumanMessage(
