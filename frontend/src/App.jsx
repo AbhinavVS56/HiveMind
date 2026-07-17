@@ -1,13 +1,17 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import "./App.css"
 import logo from "./assets/logo.png"
 import mindflayer from "./assets/mindflayer1.jpg"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 function App(){
   const[query,setQuery]=useState("")
   const[messages,setMessages]=useState([])
   const[loading,setLoading]=useState(false)
   const[chatStarted,setChatStarted]=useState(false)
+
+  const conversationRef=useRef(null)
 
   async function sendQuestion(){
     if(query.trim()===""){
@@ -28,6 +32,15 @@ function App(){
     setQuery("")
     setLoading(false)
   }
+  useEffect(()=>{
+    if(conversationRef.current)
+    {
+        conversationRef.current.scrollTo({
+            top:conversationRef.current.scrollHeight,
+            behavior:"smooth"
+        })
+    }
+  },[messages])
 
   return(
     <div className={`app ${chatStarted ? "chat-mode" : ""}`}>
@@ -35,7 +48,7 @@ function App(){
             <img src={logo} alt="HiveMind Logo" className="logo"/>
         </div>
 
-        <div className="conversation-area">
+        <div className="conversation-area" ref={conversationRef}>
             <div className="conversation">
                 {
                     messages.map(
@@ -43,7 +56,9 @@ function App(){
                             <div key={index}
                             className={`message ${message.sender==="You" ? "user" : "hivemind"}`}
                             >
-                                <p>{message.text}</p>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {message.text}
+                                </ReactMarkdown>
                             </div>
                         )
                     )

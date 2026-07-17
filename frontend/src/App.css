@@ -76,19 +76,28 @@ body{
 .message{
   display: flex;
   flex-direction: column;
-  padding: 1rem 1.25rem;
-  border-radius: 16px;
+  padding: 18px 22px;
+  line-height: 1.6;
+  border-radius: 20px;
   max-width: 75%;
 }
 
 .user{
-  background-color: rgba(145,0,0,0.82);
+  background:rgba(150,0,0,0.72);
+  border:1px solid rgba(255,80,80,.15);
+  backdrop-filter:blur(8px);
+  box-shadow:
+        0 0 12px rgba(170,0,0,.18);
   color: white;
   align-self: flex-end;
 }
 
 .hivemind{
-  background-color: rgba(25,25,25,0.82);
+  background:rgba(18,18,22,.72);
+  border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(8px);
+  box-shadow:
+        0 0 14px rgba(0,0,0,.25);
   color: white;
   align-self: flex-start;
 }
@@ -200,15 +209,21 @@ body{
     object-fit: cover;
     object-position:center top;
     opacity: 0;
+    transform: scale(1.08);
     pointer-events: none;
     z-index: 0;
-    transition: opacity 1s ease;
-    filter: brightness(0.45) blur(2px);
+    transition:
+      opacity 1.2s ease,
+      transform 1.2s ease,
+      filter 1.2s ease;
+    filter: brightness(0.35) blur(8px);
     animation: floatFlayer 12s ease-in-out infinite;
 }
 
 .app.chat-mode .mindflayer{
-    opacity: 0.28;
+    opacity:0.28;
+    transform: scale(1);
+    filter: brightness(.45) blur(2px);
 }
 
 @keyframes floatFlayer{
@@ -221,4 +236,76 @@ body{
     100%{
         transform: translateY(0px) scale(1);
     }
+}
+
+.message h1,
+.message h2,
+.message h3{
+    margin: 12px 0 8px;
+    font-weight: 700;
+}
+
+.message p{
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.message ul,
+.message ol{
+    padding-left: 24px;
+    margin: 8px 0;
+}
+
+.message li{
+    margin: 6px 0;
+}
+
+.message strong{
+    font-weight: 700;
+}
+
+.message em{
+    font-style: italic;
+}
+
+.message code{
+    background: rgba(255,255,255,0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+}
+
+.message pre{
+    background: rgba(0,0,0,0.35);
+    padding: 12px;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+.message pre code{
+    background: transparent;
+    padding: 0;
+}
+
+.message table{
+    width:100%;
+    border-collapse:collapse;
+    margin:16px 0;
+}
+
+.message th,
+.message td{
+    border:1px solid rgba(255,255,255,0.2);
+    padding:10px;
+    text-align:left;
+    vertical-align:top;
+}
+
+.message th{
+    background:rgba(255,255,255,0.08);
+    font-weight:600;
+}
+
+.message tr:nth-child(even){
+    background:rgba(255,255,255,0.03);
 }
