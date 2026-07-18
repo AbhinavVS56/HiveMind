@@ -112,6 +112,24 @@ body{
     transition: top 0.8s ease, left 0.8s ease, transform 0.8s ease;
 }
 
+.input-section textarea:focus{
+    outline:none;
+    border-color:rgba(255,255,255,.9);
+    box-shadow:
+        0 0 0 3px rgba(255,255,255,.08),
+        0 0 20px rgba(180,40,40,.25);
+
+}
+
+.input-section textarea::placeholder{
+    color:rgba(255,255,255,.65);
+    transition:opacity .25s ease;
+}
+
+.input-section textarea:focus::placeholder{
+    opacity:.35;
+}
+
 .app.chat-mode .input-area{
     top: auto;
     bottom: 30px;
@@ -122,6 +140,13 @@ body{
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease;
+}
+
+.input-section:focus-within{
+    transform:translateY(-2px);
 }
 
 .button{

@@ -42,6 +42,14 @@ function App(){
     }
   },[messages])
 
+  const handleKeyDown = (event) => {
+    if (loading) return;
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendQuestion();
+    }
+}
+
   return(
     <div className={`app ${chatStarted ? "chat-mode" : ""}`}>
         <div className="header">
@@ -73,6 +81,7 @@ function App(){
                     placeholder="What's on your mind?"
                     value={query}
                     onChange={(event)=>setQuery(event.target.value)}
+                    onKeyDown={handleKeyDown}
                 />
                 <div className="button">
                     <button
