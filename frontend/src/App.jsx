@@ -4,6 +4,8 @@ import logo from "./assets/logo.png"
 import mindflayer from "./assets/mindflayer1.jpg"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { motion } from "framer-motion";
+import TypingMessage from "./components/TypingMessage";
 
 function App(){
   const[query,setQuery]=useState("")
@@ -61,13 +63,31 @@ function App(){
                 {
                     messages.map(
                         (message,index)=>(
-                            <div key={index}
+                            <motion.div key={index}
                             className={`message ${message.sender==="You" ? "user" : "hivemind"}`}
+                            initial={{
+                                opacity:0,
+                                y:20,
+                                scale:0.96
+                            }}
+                            animate={{
+                                opacity:1,
+                                y:0,
+                                scale:1
+                            }}
+                            transition={{
+                                duration:0.35,
+                                ease:"easeOut"
+                            }}
                             >
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {message.text}
-                                </ReactMarkdown>
-                            </div>
+                                {
+                                message.sender === "HiveMind"
+                                    ? (<TypingMessage text={message.text}/>)
+                                    : (<ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {message.text}
+                                        </ReactMarkdown>)
+                                }
+                            </motion.div>
                         )
                     )
                 }
@@ -85,11 +105,29 @@ function App(){
                 />
                 <div className="button">
                     <button
-                        className="ask-button"
-                        onClick={sendQuestion}
-                        disabled={loading}
+                    className="ask-button"
+                    onClick={sendQuestion}
+                    disabled={loading}
                     >
-                    {loading ? "Thinking..." : "Ask HiveMind"}
+                    {loading ? (
+                        <div className="loading-content">
+                        <motion.div
+                            className="loading-dot"
+                            animate={{
+                                scale: [1, 1.25, 1],
+                                opacity: [0.5, 1, 0.5]
+                            }}
+                            transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                        />
+                        <span>Thinking...</span>
+                        </div>
+                    ) : (
+                        "Ask HiveMind"
+                    )}
                     </button>
                 </div>
             </div>

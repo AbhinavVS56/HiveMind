@@ -38,7 +38,11 @@ body{
 .logo{
   width: 420px;
   height: auto;
-  transition: width 0.8s ease;
+  transition:
+    width 0.8s ease,
+    filter 0.4s ease,
+    transform 0.4s ease;
+  animation: logoBreath 4s ease-in-out infinite;
 }
 
 .app.chat-mode .logo{
@@ -154,6 +158,21 @@ body{
   justify-content: center;
 }
 
+.loading-content{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.loading-dot{
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff4d4d;
+    box-shadow: 0 0 12px rgba(255, 77, 77, 0.8);
+}
+
 .query-input{
   width: 100%;
   padding: 1rem;
@@ -193,6 +212,24 @@ body{
   background-color: darkred;
   transform: translateY(-2px);
   box-shadow: 0 0 20px rgba(220,20,60,0.6);
+}
+
+.conversation-area::-webkit-scrollbar{
+  width:10px;
+}
+
+.conversation-area::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+.conversation-area::-webkit-scrollbar-thumb{
+    background:rgba(170,0,0,.55);
+    border-radius:20px;
+    border:2px solid transparent;
+}
+
+.conversation-area::-webkit-scrollbar-thumb:hover{
+    background:rgba(210,30,30,.8);
 }
 
 .quote{
@@ -260,6 +297,21 @@ body{
     }
     100%{
         transform: translateY(0px) scale(1);
+    }
+}
+
+@keyframes logoBreath{
+    0%{
+        filter:
+            drop-shadow(0 0 8px rgba(170,0,0,.35));
+    }
+    50%{
+        filter:
+            drop-shadow(0 0 20px rgba(220,30,30,.75));
+    }
+    100%{
+        filter:
+            drop-shadow(0 0 8px rgba(170,0,0,.35));
     }
 }
 
